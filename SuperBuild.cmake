@@ -44,10 +44,13 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 # Find CUDA
-find_package(CUDA)
-if (CUDA_FOUND)
-   message(STATUS "<<<<<<<<<<<<<<<<< CUDA FOUND >>>>>>>>>>>>>>>>>>>>>")
-   message(STATUS "Will enable CUDA dependencies where possible.")
+option(DISABLE_CUDA "Disable CUDA" OFF)
+if (NOT DISABLE_CUDA)
+  find_package(CUDA)
+  if (CUDA_FOUND)
+     message(STATUS "<<<<<<<<<<<<<<<<< CUDA FOUND >>>>>>>>>>>>>>>>>>>>>")
+     message(STATUS "Will enable CUDA dependencies where possible.")
+  endif()
 endif()
 
 # If OSX give the advanced option to use absolute paths for shared libraries
@@ -242,11 +245,13 @@ if (USE_ITK)
 endif()
 
 # If building STIR and CUDA present, offer to build NiftyPET
-if (CUDA_FOUND AND NOT USE_SYSTEM_STIR)
+if (CUDA_FOUND AND NOT DISABLE_CUDA AND NOT USE_SYSTEM_STIR)
   set(USE_NIFTYPET ON CACHE BOOL "Build STIR with NiftyPET's projectors") # FORCE)
   if (USE_NIFTYPET)
     option(USE_SYSTEM_NIFTYPET "Build using an external version of NiftyPET" OFF)
   endif()
+else()
+  set(USE_NIFTYPET OFF CACHE BOOL "Build STIR with NiftyPET's projectors" FORCE)
 endif()
 
 ## set versions
@@ -319,6 +324,10 @@ set(CCPPETMR_INSTALL ${SUPERBUILD_INSTALL_DIR})
 ## environment variables for Python and Matlab.
 ## in the env_ccppetmr scripts we perform a substitution of the whole block
 ## during the configure_file() command call below.
+
+if (BUILD_SPM AND NOT DISABLE_MATLAB AND Matlab_ROOT_DIR AND "${CMAKE_SYSTEM}" MATCHES "Linux")
+  set(Matlab_extra_ld_path ":${Matlab_ROOT_DIR}/extern/bin/glnxa64")
+endif()
 
 set(ENV_PYTHON_BASH "#####    Python not found    #####")
 set(ENV_PYTHON_CSH  "#####    Python not found    #####")
